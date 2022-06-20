@@ -2,6 +2,8 @@
 
 This is the repo of a research effort in the area of ML applied to optimization/operations research.
 
+## Knapsack Problem
+
 The file solver.py contains a branch and bound approach to the knapsack problem. To run you can open a terminal and just run 
 
     python solver.py
