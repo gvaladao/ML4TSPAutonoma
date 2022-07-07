@@ -4,23 +4,9 @@ This is the private repo of a research effort in the area of ML applied to optim
 
 ## Knapsack Problem
 
-The file solver.py contains a branch and bound approach to the knapsack problem. To run you can open a terminal and just run 
+The file knapsackGenerationAndSolution.py does 2 things:
 
-    python solver.py
+1. Generates a set of knapsack problems
+2. Solves the generated knapsack problems using a branch and bound basic algorithm. The algorithm is exact, thus it yields a certified optimal solution. However, if the time taken to compute exceeds a certain timeout (user defined) the solution is not certified as being optimal and thus is approximate in general.
 
-The data that defines the knapsack problem to be solved must be in a text file with data in the following pattern:
-
-    n   k
-    v1  w1
-    v2  w2
-    .   .
-    .   .
-    .   .
-    vn  wn
-
-In the above, the first line contains the number of items (n) and the capacity of the knapsack (k), while the following lines contain the value and weight for each of the n items.
-
-There are a set of low and large scale knapsack problems in files contained in the folders inside the *moredata* folder. To solve a specific problem instance, the path to the corresponding definition file must be set in the line of the solver.py file where the knapsack instance file is read. For example:
-
-     with open('./moredata/large_scale/knapPI_2_10000_1000_1', 'r') as input_data_file:
-     
+To use this code you just have to run the script and have the opt_utils.py file in the same directory as knapsackGenerationAndSolution.py    
