@@ -85,4 +85,6 @@ for i in range(number_of_instances):
   dfresult = dfresult.append(row_to_append,ignore_index=True)
 
 dfkis.to_pickle("dfkis.pkl")
+# df_knapsack_instances=pd.read_pickle("dfkis.pkl")
+#
 dfresult.to_pickle("dfresult.pkl")
