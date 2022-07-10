@@ -14,7 +14,7 @@ sys.setrecursionlimit(10500)
 
 number_of_items = 2
 max_weight = 30
-timeout = 50
+
 max_value = 100
 timeout = 100
 capacity = max_weight

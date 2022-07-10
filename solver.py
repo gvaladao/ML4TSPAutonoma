@@ -6,9 +6,12 @@ import time
 import datetime
 from collections import namedtuple
 import sys
-sys.setrecursionlimit(10500)    
+
+import opt_utils
+
+sys.setrecursionlimit(10500)
 Item  = namedtuple("Item", ['index', 'value', 'weight'])
-Item2 = namedtuple("Item", ['index', 'value', 'weight', 'density'])
+Item2 = namedtuple("Item", [ 'value', 'weight', 'density'])
 
 def solve_it(input_data):
     # Modify this code to run your optimization algorithm
@@ -27,7 +30,7 @@ def solve_it(input_data):
         line = lines[i]
         parts = line.split()
         items.append(Item(i-1, float(parts[0]), float(parts[1])))
-        items2.append(Item2(i-1, float(parts[0]), float(parts[1]), float(parts[0])/float(parts[1])))
+        items2.append(Item2( float(parts[0]), float(parts[1]), float(parts[0])/float(parts[1])))
         items2sorted = sorted(items2,key=lambda itm: itm.density,reverse=True)
     
     # a trivial algorithm for filling the knapsack
@@ -54,7 +57,8 @@ def solve_it(input_data):
     initialState = [0, capacity, initialOptimisticEstimate]
     bestSolution = [-1, []]
     startTime = time.time()
-    solution = BnB(0, items2sorted, initialState,[],bestSolution,startTime)
+    timeout=100
+    solution = opt_utils.BnB(0, items2sorted, initialState,[],bestSolution,startTime,timeout)
     value = solution[0]
     
     # prepare the solution in the specified output format
@@ -80,7 +84,8 @@ if __name__ == '__main__':
     # else:
     #     print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/ks_4_0)')
     
-    with open('./moredata/large_scale/knapPI_2_10000_1000_1', 'r') as input_data_file:
+    # with open('./moredata/large_scale/knapPI_2_10000_1000_1', 'r') as input_data_file:
+    with open('./moredata/low-dimensional/f1_l-d_kp_10_269', 'r') as input_data_file:
 
         st = datetime.datetime.now()                        
         input_data = input_data_file.read()
