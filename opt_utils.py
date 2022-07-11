@@ -9,7 +9,21 @@ import pandas as pd
 ## A small library of utilities to discrete optimization tasks
 
 def BnB(depth, valuesWeightsDensities, state, vars, bestSolution, startTime, timeout):
-    ## Simple branch and bound algorithm to solve the knapsack problem. If the computations finish below a timeout time the solution is certifiable optimum. Otherwise the solution is approximate.
+    ## Simple branch and bound algorithm to solve the knapsack problem.
+    # If the computations finish below a timeout time the solution is certifiable optimum.
+    # Otherwise the solution is approximate.
+    # depth starts from 0, is increasing as we go down in the search tree (given by vars).
+    #
+    # vars a list of variables the initial value is []
+    # is a list of possibilitis
+    # for item i 0 means is not taken in the knapsack as a solution
+    #            1 item i is part of the solution
+    # state a vector of 3 elements: Value, Room, Estimate
+    #  Value is the current soultion value, we wish to maximaite this; initial value is 0
+    #  Room the remaining weight of the capacity considering the items in the knapsack until now; initial value the capacity of the knapsack
+    #  Estimate the possible value of the remaining item without the capacity constraint.
+    # valuesWeightsDensities a sorted vector (by desity)  with the items
+    # bestSolution until now
 
     print('Depth: %s\n' % depth)
     # print('Vars: %s\n' %vars)
@@ -40,7 +54,7 @@ def BnB(depth, valuesWeightsDensities, state, vars, bestSolution, startTime, tim
 
     endTime = time.time()
     if (endTime - startTime > timeout):
-        bestSolution[1] = bestSolution[1] + [5]
+        bestSolution[1] = bestSolution[1] + [5] # why this ?
         return bestSolution
 
     if (not atFullDepth):
