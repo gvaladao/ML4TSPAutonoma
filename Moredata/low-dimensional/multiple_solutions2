@@ -1,0 +1,17 @@
+6 28
+3 3
+4 4
+6 6
+8 8
+10 10
+12 12
+
+//Comments from here
+example 9.7 from the book
+Introduction to Cryptography with Mathematical Foundations and Computer Implementations
+By Alexander Stanoyevitch
+page 350
+
+thre should be two solutions
+6+10+12
+4+6+8+10
