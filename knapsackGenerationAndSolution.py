@@ -12,17 +12,23 @@ sys.setrecursionlimit(10500)
 ## This script generates a set of knapsack problems and solves them by using a simple branch-and-bound algorithm (if the computation of the solution takes more than a timeout then the solution obtained is approximate).
 ## A dataframe with the results is created and saved into the files.
 
-number_of_items = 2
-max_weight = 30
-
-max_value = 100
+number_of_items = 10
+capacity = 1
 timeout = 100
-capacity = max_weight
-weight_steps = math.floor(max_weight/4)
+max_value = 1
+numbasevalues = 10 # The number of values in the base list from which we generate the list of weights and values for the n items of the knapsacks
+readKnapsacks = False # Whether knapsacks should be read from file (True) or generated in the script (False)
+usegurobi = True # whether we use gurobi (True) or our own BnB algorithm to solve the knapsack
+max_weight = capacity # We can consider, without loss of generality, that the capacity is equal to 1 and that the possible maximum value of any weight is the capacity (1). If some variable
+                      # is greater than the capacity that means that that variable must be zero and we then have another knapsack with one less variable.
 
+kis = opt_utils.KnapsackInstances(number_of_items, capacity, max_weight,max_value,numbasevalues)
 
-kis = opt_utils.KnapsackInstances(number_of_items, capacity, max_weight, weight_steps,max_value)
-dfkis = kis.generateKnapsacks()
+if readKnapsacks:
+  dfkis = pd.read_pickle("./dfkis.pkl")
+else:
+  dfkis = kis.generateKnapsacks()
+
 dfresult = pd.DataFrame(columns=["Value","Certificate","Variables","Elapsed Time"])
 number_of_instances = int(dfkis.shape[0]/number_of_items)
 
@@ -56,7 +62,11 @@ for i in range(number_of_instances):
   elif (np.sum(items_aux[:,0])<=capacity):
     solution = [np.sum(items_aux[:,1]), [1]*number_of_items]
   else: # The solution is not a trivial one.
-    solution = opt_utils.BnB(0, items_sorted, initialState,[],bestSolution,startTime,timeout)
+    if usegurobi:
+      solution = opt_utils.useGurobi(items_sorted)  
+    else:  
+      solution = opt_utils.BnB(0, items_sorted, initialState,[],bestSolution,startTime,timeout)
+    
   print('i: %s j: %s' %(i ,j))
   value = solution[0]
   endTime = time.time()
@@ -70,6 +80,8 @@ for i in range(number_of_instances):
     taken = taken[0:number_of_items]
     taken = np.array(taken)
     taken = taken[aaa] # Put the variables in the original order.
+    taken = np.where(taken==-0,0,taken) # Sometimes the optimization solver (e.g. Gurobi) gives the value -0. to a decision variable which is a problem later. 
+                                        # Accordingly, we replace those values with 0..
     taken = list(taken)
     row_to_append = {"Value": solution[0],"Certificate": 0, "Variables": taken, "Elapsed Time": elapsedTime} # This solution is not certified as optimal.
   elif (len(solution[1])>=number_of_items): # We must check whether len(solution[1])>=number_of_items) because if the timeout is too low the solution might not still have enough elements.
@@ -77,6 +89,8 @@ for i in range(number_of_instances):
     taken = solution[1]
     taken = np.array(taken)
     taken = taken[aaa] # Put the variables in the original order.
+    taken = np.where(taken==-0,0,taken) # Sometimes the optimization solver (e.g. Gurobi) gives the value -0. to a decision variable which is a problem later. 
+                                        # Accordingly, we replace those values with 0..
     taken = list(taken)
     row_to_append = {"Value": solution[0],"Certificate": 1, "Variables": taken, "Elapsed Time": elapsedTime} # This solution is certified as optimal.
   else:
@@ -84,7 +98,7 @@ for i in range(number_of_instances):
     row_to_append = {"Value": -500,"Certificate": 0, "Variables": taken, "Elapsed Time": elapsedTime}
   dfresult = dfresult.append(row_to_append,ignore_index=True)
 
-dfkis.to_pickle("dfkis.pkl")
-# df_knapsack_instances=pd.read_pickle("dfkis.pkl")
-#
-dfresult.to_pickle("dfresult.pkl")
+if not readKnapsacks:
+  dfkis.to_pickle("nitems_"+str(number_of_items)+"_ninstances_" +str(number_of_instances) + "_" + "dfkis.pkl")
+
+dfresult.to_pickle("nitems_"+str(number_of_items)+"_ninstances_" +str(number_of_instances) + "_" + "dfresult.pkl")
