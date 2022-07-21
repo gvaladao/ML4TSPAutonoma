@@ -32,7 +32,7 @@ tDsim = number_of_items-1 # $ (i,j) \in D \iff dHamming(x_i,x_j) >= tDsim $
 gamma = 0.1 # The slack variable parameter (in the ITML paper they refer experimenting with gamma = 0.01, 0.1, 1, 10)
 tol = 0.01
 niterations = 100000 # The max number of iterations. Achieved if tol threshold is not met before. 
-readX = True
+readX = False
 num_knapsack_pairs = 1000# The total number of pairs of knapsacks considered. These pairs are randomly sampled from all the possible combinations of 2 knapsacks.
 ####### Input Parameters #######
 
