@@ -1,11 +1,13 @@
 import copy
+import yaml
 import random
 import pandas as pd
 import numpy as np
 from ast import BitXor
 from numpy import linalg as LA
 from itertools import combinations
-from more_itertools import random_combination
+import more_itertools 
+import common
 
 ### Learning to hash knapsack problems.
 
@@ -20,20 +22,26 @@ from more_itertools import random_combination
 
 ##### Based on: Information-Theoretic Metric Learning. Davis, Kulis, Jain, Sra, Dhillion, ICML 2007.
 
+
+
+with open("config.yaml", "r") as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+print(config)
+
+
 ####### Input Parameters #######
-dfkis = pd.read_pickle("./nitems_10_ninstances_92378_dfkis.pkl")
-dfr   = pd.read_pickle("./nitems_10_ninstances_92378_dfresult.pkl")
-number_of_items = 10
-b = 6 # The number of bits output by the hashing function
-lper = 5
-uper = 95
-tSim = 1 # $ (i,j) \in S \iff dHamming(x_i,x_j) <= tSim $  
-tDsim = number_of_items-1 # $ (i,j) \in D \iff dHamming(x_i,x_j) >= tDsim $
-gamma = 0.1 # The slack variable parameter (in the ITML paper they refer experimenting with gamma = 0.01, 0.1, 1, 10)
-tol = 0.01
-niterations = 100000 # The max number of iterations. Achieved if tol threshold is not met before. 
-readX = False
-num_knapsack_pairs = 1000# The total number of pairs of knapsacks considered. These pairs are randomly sampled from all the possible combinations of 2 knapsacks.
+dfkis = pd.read_pickle("./nitems_30_ninstances_90000_dfkis.pkl")
+dfr   = pd.read_pickle("./nitems_30_ninstances_90000_dfresult.pkl")
+number_of_items = config['number_of_items']
+b = config['b'] # The number of bits output by the hashing function
+lper = config['lper'] # The lower percentile of the distances between a set of pairs to be used in the algorithm that learns the Mahalanobis metric.
+uper = config['uper'] # The higher percentile of the distances between a set of pairs to be used in the algorithm that learns the Mahalanobis metric.
+tSim = config['tSim'] # $ (i,j) \in S \iff dHamming(x_i,x_j) <= tSim $ The threshold of similarity between 2 knapsacks  
+gamma = config['gamma'] # The slack variable parameter (in the ITML paper they refer experimenting with gamma = 0.01, 0.1, 1, 10)
+tol = config['tol'] # The tolerance considered in the iterative algorithm that learns the Mahalanobis matrix A. When the difference between 2 certain quantities is less than tol we consider that the algorithm converged. Used in the file ('hashingKnapsacks.py').
+niterations = config['niterations'] # The max number of iterations in the iterative algorithm that learns the Mahalanobis matrix A. Achieved if tol threshold is not met before. Used in the file ('hashingKnapsacks.py').
+readX = config['readX'] # True if we want to read X from a file. False otherwise.
+num_knapsack_pairs = config['num_knapsack_pairs'] # The total number of pairs of knapsacks considered (among the set of pre solved knapsacks). These pairs are randomly sampled from all the possible combinations of 2 knapsacks.
 ####### Input Parameters #######
 
 ####### Definitions #######
@@ -61,18 +69,18 @@ A = A0
 
 ######### Creation of the sets S and D (the sets of similar and dissimilar items, respectively).
 ######### Set S contains the pairs of indexes of similar knapsacks and the set D contains the pairs of indexes of dissimilar knapsacks
-comb = [random_combination(np.arange(number_of_instances),2) for aux in range(num_knapsack_pairs)] # A list of the pairs of knapsacks considered. These
+comb = [more_itertools.random_combination(np.arange(number_of_instances),2) for aux in range(num_knapsack_pairs)] # A list of the pairs of knapsacks considered. These
 # pairs are randomly selected from all the possible pairs of knapsacks. This list has num_knapsack_pairs elements
-# We are considering that if the hamming distance between the solutions (vector of decision variables) of 2 knapsacks is equal or lower than 1 then the
-# the two knapsacks are similar. When the hamming distance is higher or equal than number_of_items -1 the[n the two knapsacks are dissimilar. 
-S = [ pair for pair in comb if np.sum(np.bitwise_xor(np.array(dfr.iloc[pair[0]].tolist()[2]), np.array(dfr.iloc[pair[1]].tolist()[2]))) <= 1 ]
-D = [ pair for pair in comb if np.sum(np.bitwise_xor(np.array(dfr.iloc[pair[0]].tolist()[2]), np.array(dfr.iloc[pair[1]].tolist()[2]))) >= number_of_items-1 ]
+# We are considering that if the hamming distance between the solutions (vector of decision variables) of 2 knapsacks is equal or lower than tSim then the
+# the two knapsacks are similar. When the hamming distance is higher than tSim then the two knapsacks are dissimilar. 
+S = [ pair for pair in comb if np.sum(np.bitwise_xor(np.array(dfr.iloc[pair[0]].tolist()[2],dtype=int), np.array(dfr.iloc[pair[1]].tolist()[2],dtype=int))) <= tSim]
+D = [ pair for pair in comb if np.sum(np.bitwise_xor(np.array(dfr.iloc[pair[0]].tolist()[2],dtype=int), np.array(dfr.iloc[pair[1]].tolist()[2],dtype=int))) >  tSim ]
 
 ######### We determine the 5th and 95th percentiles of the distances between at least 100 pairs of knapsacks.
 
-totalNumPairs = len(comb)
-numPairs = np.min([100, totalNumPairs])
-distances = np.zeros(numPairs)
+totalNumPairs = len(comb) # Total number of knapsack pairs
+numPairs = np.min([len(S), len(D)]) # The number of pairs used to compute the histogram and from there the quantiles
+distances = -1*np.ones(numPairs)
 
 for t in np.arange(numPairs):
   pairNo = random.randint(0,totalNumPairs-1)
@@ -81,16 +89,20 @@ for t in np.arange(numPairs):
 
   v1 = X[:,i]
   v2 = X[:,j]
-  distances[t] = v1 @ A0 @ v2 
   
+  #distances[t] = v1 @ A0 @ v2 
   
-######### Compute the histogram
+  vd = v1-v2
+  distances[t] = vd @ A0 @ vd 
+  
+######### Compute the histogram and get the lper and uper quantiles
 [v,e]=np.histogram(distances,100)
 l = e[int(np.floor(lper))]
 u = e[int(np.floor(uper))] 
 
-
-pairsInSandD = S + D
+random.shuffle(S)
+random.shuffle(D)
+pairsInSandD = list(more_itertools.interleave_longest(S,D)) # This way we interleave elements from D and S and thus we mitigate the possible imbalance between the two classes 
 lambdas     = {pair: 0 for pair in pairsInSandD } # lambdas initialization
 lambdasOld  = {pair: 0 for pair in pairsInSandD } # lambdas initialization
 slacksS = {pair: u for pair in S} # Slack variables initialization
@@ -101,11 +113,10 @@ slacks.update(slacksD)
 
 
 ####### Iterations
-
-random.shuffle(pairsInSandD) # We are shuffling the pairs to pick up pairs randomly from S and D along the iterative process.
 converged = False
 iters = 0
 aux=-1
+
 while not converged:
   for pair in pairsInSandD:
     v = X[:,pair[0]]-X[:,pair[1]]
@@ -131,37 +142,31 @@ while not converged:
     if (aux < tol) or (iters > niterations):
       converged = True
 
+with open("num_knapsack_pairs_"+str(num_knapsack_pairs)+ "_ninstances_" +str(number_of_instances) +"_A"+".npy",'wb') as f:
+  np.save(f,A)
 
-#### Building and applying the hash function
-
-def hExplicit(x,A,b):
-  # x: a numpy 1-d array which represents a knapsack. It possesses the weights and values of the knapsack.
-  # A: a learned mahalanobis metric in the space of the knapsacks (weights and values).
-  # b: the number of bits produced by the hash function
-  d = x.size
-  GT = np.linalg.cholesky(A)
-  G = GT.T
-  h = -1*np.ones(b)
-  
-  mu, sigma = 0, 1.0
-  for i in np.arange(b):
-    r = np.random.default_rng().normal(mu,sigma,d)
-    h[i] = 1 if r.T @ G @ x >= 0 else -1
-  
-  return h
   
 d, ninstances = X.shape
 
-hashes = np.zeros(b,ninstances)
+hashes = np.zeros((b,ninstances))
+
+R = np.zeros((d,b)) # 2D matrix having b columns and where each column is a d-dimensional vector that is a realization of a (d-dimensional) normal distribution (mu = 0 and sigma = 1).
+mu, sigma = 0, 1.0
+for j in np.arange(b):
+  R[:,j] = np.random.default_rng().normal(mu,sigma,d)
+
+with open("nitems_"+str(number_of_items)+ "_ninstances_" +str(ninstances) + "_b_" +str(b)+"_R"+".npy",'wb') as f:
+  np.save(f,R)
+
 
 for i in np.arange(ninstances):
-  hashes[:,i] = hExplicit(X[:,i],A,b)
+  hashes[:,i] = common.h_explicit(X[:,i],A,R)
 
     
 with open("nitems_"+str(number_of_items)+ "_ninstances_" +str(ninstances) + "_b_" +str(b)+"_Hashes"+".npy",'wb') as f:
   np.save(f,hashes)
     
     
-    
+
   
 
