@@ -1,8 +1,7 @@
 import sys
-import math
 import time
+import yaml
 import pandas as pd
-import datetime
 import opt_utils
 import numpy as np
 from collections import namedtuple
@@ -12,26 +11,33 @@ sys.setrecursionlimit(10500)
 ## This script generates a set of knapsack problems and solves them by using a simple branch-and-bound algorithm (if the computation of the solution takes more than a timeout then the solution obtained is approximate).
 ## A dataframe with the results is created and saved into the files.
 
-number_of_items = 10
-capacity = 1
-timeout = 100
-max_value = 1
-numbasevalues = 10 # The number of values in the base list from which we generate the list of weights and values for the n items of the knapsacks
-readKnapsacks = False # Whether knapsacks should be read from file (True) or generated in the script (False)
-usegurobi = True # whether we use gurobi (True) or our own BnB algorithm to solve the knapsack
+
+
+with open("config.yaml", "r") as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+print(config)
+
+
+
+number_of_items = config['number_of_items']
+capacity = config['capacity']
+timeout = config['timeout']
+max_value = config['max_value']
+numbasevalues = config['numbasevalues'] # The number of values in the base list from which we generate the list of weights and values for the n items of the generated knapsacks
+readKnapsacks = config['readKnapsacks'] # Whether knapsacks should be read from file (True) or generated in the script (False)
+usegurobi = config['usegurobi'] # Whether we use gurobi (True) or our own BnB algorithm to obtain the solver based solutions to the knapsacks.
 max_weight = capacity # We can consider, without loss of generality, that the capacity is equal to 1 and that the possible maximum value of any weight is the capacity (1). If some variable
                       # is greater than the capacity that means that that variable must be zero and we then have another knapsack with one less variable.
-
-kis = opt_utils.KnapsackInstances(number_of_items, capacity, max_weight,max_value,numbasevalues)
+number_of_instances = config['number_of_instances'] # The number of knapsacks to be generated in order to train the learning algorithm.
 
 if readKnapsacks:
   dfkis = pd.read_pickle("./dfkis.pkl")
 else:
+  kis = opt_utils.KnapsackInstances(number_of_items, capacity, max_weight,max_value,numbasevalues,number_of_instances)
   dfkis = kis.generateKnapsacks()
 
 dfresult = pd.DataFrame(columns=["Value","Certificate","Variables","Elapsed Time"])
 number_of_instances = int(dfkis.shape[0]/number_of_items)
-
 
 
 
