@@ -32,11 +32,12 @@ for ks in np.arange(number_of_queryknapsacks):
   # knapsack instance randomly generated
   capacity = 30
   max_value = 100
-  weights = np.random.randint(capacity+1,size=number_of_items)
+  weights = np.random.randint(1,capacity+1,size=number_of_items)
   values = np.random.randint(max_value+1,size=number_of_items)
   weights_normalized = weights/capacity
   values_normalized = values/max_value
   densities = values_normalized/weights_normalized
+  # print("ks: ",ks)
   indices_for_sorting = np.argsort(densities)
   indices_for_sorting = indices_for_sorting[::-1] # To get first the indices of the bigger densities (to sort by descending order)
   weights_normalized = weights_normalized[indices_for_sorting]
