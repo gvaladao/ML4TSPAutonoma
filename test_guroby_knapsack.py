@@ -85,9 +85,13 @@ days_of_the_year = 365
 problem_size = 30
 generated_problems = 100
 for problem in range(generated_problems):
-    p = [randint(1, days_of_the_year) for _ in range(problem_size)]
-    w = [randint(1,2) for _ in range(problem_size)]
+    w = [randint(1, days_of_the_year) for _ in range(problem_size)]
+    p = [randint(1,2) for _ in range(problem_size)]
     min_capacity = min(p)
     max_capacity = sum(p)
     c = randint(min_capacity, max_capacity)
+    print("problem: ",problem)
+    print("w: ", w)
+    print("c: ", c)
+
     solve_problem(p, w, c)
