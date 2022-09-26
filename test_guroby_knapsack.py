@@ -71,15 +71,15 @@ def solve_problem(prices, weights, capacity):  # prices weights, capacity
         solution_new = m.ObjVal
 
     print("Found {} optimal feasible Solutions!".format(k))
-    # print("Max val: ", solution_old)
+    print("Max val: ", solution_old)
     overall_solution = [0] * len(solution_dict[1])
     for i in range(k):
-        # print(i + 1, solution_dict[i + 1])
+        print(i + 1, solution_dict[i + 1])
         for j in range(len(solution_dict[i + 1])):
             overall_solution[j] += solution_dict[i + 1][j]
     for j in range(len(solution_dict[1])):
         overall_solution[j] = overall_solution[j] / len(solution_dict)
-    # print("overal solution: ",overall_solution)
+    print("overal solution: ",overall_solution)
     # m.write("knapsack.lp")
     return k
 
