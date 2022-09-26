@@ -28,7 +28,7 @@ def bin2int(x):
 
 
 def hamming(v,w):
-# Computes the Hamming distance between v and w. v and w must be numpy arrays with binary values
+# Computes the Hamming distance between v and weights. v and weights must be numpy arrays with binary values
   v = v.astype(int)
   w = w.astype(int)
   aux = v!=w

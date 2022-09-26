@@ -16,14 +16,14 @@ def cancel_last_solution(m,j):
 
 
 # define data coefficients
-def solve_problem(p, w, c):  # prices weights, capacity
-    # p = [6, 6, 8, 9, 6, 7, 3, 2, 6]
-    # w = [2, 3, 6, 7, 5, 9, 4, 8, 5]
-    # c = 20
-    # w=[1]*30
-    # p=w
-    # c=2
-    n = len(w)
+def solve_problem(prices, weights, capacity):  # prices weights, capacity
+    # prices = [6, 6, 8, 9, 6, 7, 3, 2, 6]
+    # weights = [2, 3, 6, 7, 5, 9, 4, 8, 5]
+    # capacity = 20
+    # weights=[1]*30
+    # prices=weights
+    # capacity=2
+    n = len(weights)
     # Maximize
     #   6 x[0] + 6 x[1] + 8 x[2] + 9 x[3] + 6 x[4] + 7 x[5] + 3 x[6] + 2 x[7] + 6 x[8]
     # Subject To
@@ -37,10 +37,10 @@ def solve_problem(p, w, c):  # prices weights, capacity
     x: None = m.addVars(n, vtype=GRB.BINARY, name='x')
 
     # set objective function
-    m.setObjective(quicksum(p[i] * x[i] for i in range(n)), GRB.MAXIMIZE)
+    m.setObjective(quicksum(prices[i] * x[i] for i in range(n)), GRB.MAXIMIZE)
 
     # add constraint
-    m.addConstr((quicksum(w[i] * x[i] for i in range(n)) <= c), name="Capacity")
+    m.addConstr((quicksum(weights[i] * x[i] for i in range(n)) <= capacity), name="Capacity")
 
     # Add Lazy Constraints
     m.update()
@@ -66,6 +66,8 @@ def solve_problem(p, w, c):  # prices weights, capacity
         m.addConstr((quicksum(x[i] for i in B) - quicksum(x[j] for j in NB)) <= len(B) - 1, name="CutSolution{}".format(k))
         m.update()
         m.optimize()  # solve the model
+        if m.Status != GRB.OPTIMAL:
+            break
         solution_new = m.ObjVal
 
     print("Found {} optimal feasible Solutions!".format(k))
@@ -79,19 +81,25 @@ def solve_problem(p, w, c):  # prices weights, capacity
         overall_solution[j] = overall_solution[j] / len(solution_dict)
     # print("overal solution: ",overall_solution)
     # m.write("knapsack.lp")
+    return k
 
 
-days_of_the_year = 365
+weights_range = 100
+price_range = 50
 problem_size = 30
 generated_problems = 100
+multiple_solution=0
 for problem in range(generated_problems):
-    w = [randint(1, days_of_the_year) for _ in range(problem_size)]
-    p = [randint(1,2) for _ in range(problem_size)]
+    w = [randint(1, weights_range) for _ in range(problem_size)]
+    p = [randint(1, price_range) for _ in range(problem_size)]
     min_capacity = min(p)
     max_capacity = sum(p)
     c = randint(min_capacity, max_capacity)
     print("problem: ",problem)
-    print("w: ", w)
-    print("c: ", c)
+    print("weights: ", w)
+    print("prices: ", p)
+    print("capacity: ", c)
 
-    solve_problem(p, w, c)
+    if solve_problem(p, w, c) > 1:
+        multiple_solution += 1
+print(multiple_solution, "% multiple solutions.")

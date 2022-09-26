@@ -34,7 +34,8 @@ if readKnapsacks:
   dfkis = pd.read_pickle("./dfkis.pkl")
 else:
   kis = opt_utils.KnapsackInstances(number_of_items, capacity, max_weight,max_value,numbasevalues,number_of_instances)
-  dfkis = kis.generateKnapsacks()
+  # dfkis = kis.generateKnapsacks()
+  dfkis = kis.generate_ordered_knapsacks()
 
 dfresult = pd.DataFrame(columns=["Value","Certificate","Variables","Elapsed Time"])
 number_of_instances = int(dfkis.shape[0]/number_of_items)
@@ -50,7 +51,10 @@ for i in range(number_of_instances):
     items.append([w,v,d])
   
   # Process each knapsack instance separatly
-  items_sorted = sorted(items,key=lambda itm: itm[2],reverse=True)
+  # problems should be sorted by two criteria, first the density, then by values and weights
+  # moreover, I think better if we solve with Gurobi the integer problem and only after that normalize
+  # items_sorted = sorted(items,key=lambda itm: itm[2],reverse=True)
+  items_sorted = sorted(items, key=lambda itm:[itm[2],itm[1],itm[0]],reverse=True)
   aa  = [x for x,y in sorted(enumerate(items), key = lambda itm: itm[1][2],reverse=True)]
   aaa = np.argsort(aa) # This is for afterwards put the variables in their original order (altered when we made the sorted operation)
     
@@ -105,6 +109,6 @@ for i in range(number_of_instances):
   dfresult = dfresult.append(row_to_append,ignore_index=True)
 
 if not readKnapsacks:
-  dfkis.to_pickle("nitems_"+str(number_of_items)+"_ninstances_" +str(number_of_instances) + "_" + "dfkis.pkl")
+  dfkis.to_pickle("nitems_"+str(number_of_items)+"_ordered_instances_" +str(number_of_instances) + "_" + "dfkis.pkl")
 
-dfresult.to_pickle("nitems_"+str(number_of_items)+"_ninstances_" +str(number_of_instances) + "_" + "dfresult.pkl")
+dfresult.to_pickle("nitems_"+str(number_of_items)+"_ordered_instances_" +str(number_of_instances) + "_" + "dfresult.pkl")
