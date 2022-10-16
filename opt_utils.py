@@ -165,7 +165,7 @@ class KnapsackInstances:
 
 
     def generate_ordered_knapsacks(self):
-        items=(i+1 for i in range(60))
+        items=(i+1 for i in range(60)) # only for 30 items! 30 weights 30 values
         items_added:int=0
         items_weights=[]
         for combination in itertools.combinations_with_replacement(items,self.n_items):
@@ -181,3 +181,40 @@ class KnapsackInstances:
                     self.df['Values'] = items_weights
                     return self.df
             print("Capacity: ",capacity," items: ",combination)
+def solve_knapsack(profits, weights, capacity):
+  # create a two dimensional array for Memoization, each element is initialized to '-1'
+  dp = [[-1 for x in range(capacity+1)] for y in range(len(profits))]
+  return knapsack_recursive(dp, profits, weights, capacity, 0)
+
+
+def knapsack_recursive(dp, profits, weights, capacity, currentIndex):
+
+  # base case checks
+  if capacity <= 0 or currentIndex >= len(profits):
+    return 0,0 # reurn profit and the capacy achieved
+
+  # if we have already solved a similar problem, return the result from memory
+  if dp[currentIndex][capacity] != -1:
+    return dp[currentIndex][capacity], capacity
+
+  # recursive call after choosing the element at the currentIndex
+  # if the weight of the element at currentIndex exceeds the capacity, we
+  # shouldn't process this
+  profit1 = 0
+  if weights[currentIndex] <= capacity:
+    profit1 = profits[currentIndex] + knapsack_recursive(
+      dp, profits, weights, capacity - weights[currentIndex], currentIndex + 1)[0]
+
+  # recursive call after excluding the element at the currentIndex
+  profit2 = knapsack_recursive(
+    dp, profits, weights, capacity, currentIndex + 1)[0]
+
+  dp[currentIndex][capacity] = max(profit1, profit2)
+  return dp[currentIndex][capacity],capacity
+
+
+def main():
+  print(solve_knapsack([1, 6, 10, 16], [1, 2, 3, 5], 7))
+  print(solve_knapsack([1, 6, 10, 16], [1, 2, 3, 5], 6))
+
+main()
