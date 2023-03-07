@@ -1,18 +1,19 @@
 # https://gist.github.com/jhelgert/eb8cc47dda8795f60a68afb10ac95433
+import json
 from random import randint
 
 from gurobipy import *
 
 
-def cancel_last_solution(m,j):
-    B, NB = [], []
-
-    for i in range(n):
-        B.append(i) if (x[i].x == 1) else NB.append(i)
-    # It sufices either one of the 1s to go to 0 or one 0 to go to 1 and the next sum will be less than len(B)
-    # the constraint forbids the sum to reach len(B)
-    m.addConstr((quicksum(x[i] for i in B) - quicksum(x[j] for j in NB)) <= len(B) - 1, name="CutSolution{}".format(j))
-    m.update()
+# def cancel_last_solution(m,j):
+#     B, NB = [], []
+#
+#     for i in range(n):
+#         B.append(i) if (x[i].x == 1) else NB.append(i)
+#     # It sufices either one of the 1s to go to 0 or one 0 to go to 1 and the next sum will be less than len(B)
+#     # the constraint forbids the sum to reach len(B)
+#     m.addConstr((quicksum(x[i] for i in B) - quicksum(x[j] for j in NB)) <= len(B) - 1, name="CutSolution{}".format(j))
+#     m.update()
 
 
 # define data coefficients
@@ -81,25 +82,40 @@ def solve_problem(prices, weights, capacity):  # prices weights, capacity
         overall_solution[j] = overall_solution[j] / len(solution_dict)
     print("overal solution: ",overall_solution)
     # m.write("knapsack.lp")
-    return k
+    return solution_dict,overall_solution
 
-
-weights_range = 100
-price_range = 50
-problem_size = 30
 generated_problems = 100
+problem_size = 30
+weights_range = 50
+price_range = 50
+
+with open("f"+str(problem_size)+" x "+str(generated_problems)+".json", "w") as f:
+ json.dump({"generated_problems": generated_problems,
+               "problem_size": problem_size,
+               "weights_range": weights_range,
+               "price_range":price_range},f,indent=2)
 multiple_solution=0
+collect_results={}
 for problem in range(generated_problems):
     w = [randint(1, weights_range) for _ in range(problem_size)]
     p = [randint(1, price_range) for _ in range(problem_size)]
-    min_capacity = min(p)
-    max_capacity = sum(p)
+    min_capacity = min(w)
+    max_capacity = sum(w)
     c = randint(min_capacity, max_capacity)
-    print("problem: ",problem)
-    print("weights: ", w)
-    print("prices: ", p)
-    print("capacity: ", c)
 
-    if solve_problem(p, w, c) > 1:
+    # print("problem: ",problem)
+    # print("weights: ", w)
+    # print("prices: ", p)
+    # print("capacity: ", c)
+
+    solutions, overall_solution = solve_problem(p, w, c)
+    collect_results["problem: " + str(problem)] = ["\n  Weights: ", w, "\n  Values: ", p]
+        # f.write(json.dumps(solutions)+"\n")
+        # f.write(json.dumps(overall_solution)+"\n")
+
+    if len(solutions)> 1:
         multiple_solution += 1
-print(multiple_solution, "% multiple solutions.")
+with open("f" + str(problem_size) + " x " + str(generated_problems) + ".json", "a") as f:
+        f.write(json.dumps(collect_results)+"\n")
+
+print(100 * multiple_solution / generated_problems, "% multiple solutions.")
