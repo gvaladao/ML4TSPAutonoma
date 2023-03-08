@@ -52,17 +52,18 @@ for f in find_csv_filenames(path):
             v_l=list(problem["items"][i]["p"] for i in range(len(problem["items"])) )
             w_l=list(problem["items"][i]["p"] for i in range(len(problem["items"])) )
             cap=int(problem["c"])
-            max_v = opt_utils.solve_knapsack(v_l, w_l, cap)
+            #max_v = opt_utils.solve_knapsack(v_l, w_l, cap)
             max_vG, max_cG, sol_l = opt_utils.solve_knapsack_gurobi_multiple(v_l, w_l, cap)
             end_date = datetime.now()
 
             print("Problem: "+problem["name"]+" "+str((end_date-start_date).total_seconds())+"sec; sol: "+str(len(sol_l)))
             text_solver = "*"
-            if (max_v != max_vG):
+            '''if (max_v != max_vG):
                 text_solver = "Sol Error max_v/maxvG: " + str(max_v) + "/" + str(max_vG) + "Gurobi int 9.5.2"
                 #diff_gurobi_solver += 1
             else:
                 text_solver = "Gurobi int 9.5.2"
+            '''
             problem = {"items": []}  # a dictionary with various propertie + items a list of discts.
 
         elif line_no==0 :
