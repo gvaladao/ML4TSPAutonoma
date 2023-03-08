@@ -127,8 +127,8 @@ class KnapsackInstances:
         base_weights_list = list(np.linspace(1e-2, self.max_weight, num=self.numbasevalues))
         base_values_list = [np.random.random_sample() for i in
                             base_weights_list]  # random_sample() gives a value from the “continuous uniform” distribution over [0.0 , 1.0)
-                                                # probably we should generate something from (0.0 , 1.0]
-                                                # Adrian question August 19, 2022
+        # probably we should generate something from (0.0 , 1.0]
+        # Adrian question August 19, 2022
 
         if self.num_of_instances == -1:
             items_weights = np.array(itertools.combinations_with_replacement(base_weights_list,
@@ -163,58 +163,124 @@ class KnapsackInstances:
         # return items_weights
         return self.df
 
-
     def generate_ordered_knapsacks(self):
-        items=(i+1 for i in range(60)) # only for 30 items! 30 weights 30 values
-        items_added:int=0
-        items_weights=[]
-        for combination in itertools.combinations_with_replacement(items,self.n_items):
-            for capacity in range(min(combination),sum(combination),7):
-                items_weights.append([x/capacity for x in combination])
-                items_added +=1
-                if items_added>=self.num_of_instances:
+        items = (i + 1 for i in range(60))  # only for 30 items! 30 weights 30 values
+        items_added: int = 0
+        items_weights = []
+        for combination in itertools.combinations_with_replacement(items, self.n_items):
+            for capacity in range(min(combination), sum(combination), 7):
+                items_weights.append([x / capacity for x in combination])
+                items_added += 1
+                if items_added >= self.num_of_instances:
                     # Linearization of lists
                     items_weights = [x for one_instance in items_weights for x in one_instance]
-
 
                     self.df['Weights'] = items_weights
                     self.df['Values'] = items_weights
                     return self.df
-            print("Capacity: ",capacity," items: ",combination)
+            print("Capacity: ", capacity, " items: ", combination)
+
+
 def solve_knapsack(profits, weights, capacity):
-  # create a two dimensional array for Memoization, each element is initialized to '-1'
-  dp = [[-1 for x in range(capacity+1)] for y in range(len(profits))]
-  return knapsack_recursive(dp, profits, weights, capacity, 0)
+    # create a two dimensional array for Memoization, each element is initialized to '-1'
+    dp = [[-1 for x in range(capacity + 1)] for y in range(len(profits))]
+
+    def knapsack_recursive(profits, weights, capacity, currentIndex):
+        # base case checks
+        if capacity <= 0 or currentIndex >= len(profits):
+            return 0  # reurn profit and the capacy achieved
+
+        # if we have already solved a similar problem, return the result from memory
+        if dp[currentIndex][capacity] != -1:
+            return dp[currentIndex][capacity]
+
+        # recursive call after choosing the element at the currentIndex
+        # if the weight of the element at currentIndex exceeds the capacity, we
+        # shouldn't process this
+        profit1 = 0
+        if weights[currentIndex] <= capacity:
+            profit1 = profits[currentIndex] + knapsack_recursive(
+                profits, weights, capacity - weights[currentIndex], currentIndex + 1)
+
+        # recursive call after excluding the element at the currentIndex
+        profit2 = knapsack_recursive(profits, weights, capacity, currentIndex + 1)
+
+        dp[currentIndex][capacity] = max(profit1, profit2)
+        return dp[currentIndex][capacity]
+
+    return knapsack_recursive(profits, weights, capacity, 0)
 
 
-def knapsack_recursive(dp, profits, weights, capacity, currentIndex):
 
-  # base case checks
-  if capacity <= 0 or currentIndex >= len(profits):
-    return 0,0 # reurn profit and the capacy achieved
+# def main():
+#   print(solve_knapsack([1, 6, 10, 16], [1, 2, 3, 5], 7))
+#   print(solve_knapsack([1, 6, 10, 16], [1, 2, 3, 5], 6))
+#   print(solve_knapsack([1, 6, 10, 16], [2, 2, 3, 5], 11))
+#
+# main()
 
-  # if we have already solved a similar problem, return the result from memory
-  if dp[currentIndex][capacity] != -1:
-    return dp[currentIndex][capacity], capacity
+def solve_knapsack_gurobi_multiple(profits, weights, capacity):  # profits weights, capacity
 
-  # recursive call after choosing the element at the currentIndex
-  # if the weight of the element at currentIndex exceeds the capacity, we
-  # shouldn't process this
-  profit1 = 0
-  if weights[currentIndex] <= capacity:
-    profit1 = profits[currentIndex] + knapsack_recursive(
-      dp, profits, weights, capacity - weights[currentIndex], currentIndex + 1)[0]
+    n = len(weights)
 
-  # recursive call after excluding the element at the currentIndex
-  profit2 = knapsack_recursive(
-    dp, profits, weights, capacity, currentIndex + 1)[0]
+    solution_dict = {}
+    m = gp.Model()
 
-  dp[currentIndex][capacity] = max(profit1, profit2)
-  return dp[currentIndex][capacity],capacity
+    # add decision variables
+    x: None = m.addVars(n, vtype=GRB.BINARY, name='x')
 
+    # set objective function
+    m.setObjective(gp.quicksum(profits[i] * x[i] for i in range(n)), GRB.MAXIMIZE)
 
-def main():
-  print(solve_knapsack([1, 6, 10, 16], [1, 2, 3, 5], 7))
-  print(solve_knapsack([1, 6, 10, 16], [1, 2, 3, 5], 6))
+    # add constraint
+    m.addConstr((gp.quicksum(weights[i] * x[i] for i in range(n)) <= capacity), name="Capacity")
 
-main()
+    # Add Lazy Constraints
+    m.setParam('TimeLimit', 5 * 60)
+    m.update()
+
+    # quiet gurobi
+    m.setParam(GRB.Param.LogToConsole, 0)
+    k = 0  # index of the current solution
+    m.optimize()  # solve the model
+    solution_new = solution_old = m.ObjVal
+
+    while (m.Status == GRB.OPTIMAL) and (solution_old == solution_new):
+        k += 1
+        # Found new feasible optimal solution
+        # m.write("{}.sol".format(k))
+        solution_dict[k] = m.getAttr('x')
+        solution_old = solution_new
+        # Make the previous solution infeasible
+        # cancel_last_solution(k)
+        B, NB = [], []
+
+        for i in range(n):
+            B.append(i) if (x[i].x == 1) else NB.append(i)
+        m.addConstr((gp.quicksum(x[i] for i in B) - gp.quicksum(x[j] for j in NB)) <= len(B) - 1,
+                    name="CutSolution{}".format(k))
+        m.update()
+        m.optimize()  # solve the model
+        if m.Status != GRB.OPTIMAL:
+            break
+        solution_new = m.ObjVal
+
+    #    print("Found {} optimal feasible Solutions!".format(k))
+    #    print("Max val: ", solution_old)
+    overall_solution = [0] * len(solution_dict[1])
+    max_cap = 0
+    for i in range(k):
+        #        print(i + 1, solution_dict[i + 1])
+        res = b''
+        for j in range(len(solution_dict[i + 1])):
+            if i == 1:
+                max_cap += solution_dict[i + 1][j] * weights[j]
+            overall_solution[j] += solution_dict[i + 1][j]
+            res = res + (b'1' if int(solution_dict[i + 1][j]) == 1 else b'0')
+        solution_dict[i + 1] = res
+    for j in range(n):
+        overall_solution[j] = overall_solution[j] / len(solution_dict.keys())
+    #    print("overal solution: ",overall_solution)
+    # m.write("knapsack.lp")
+
+    return solution_old, max_cap, list(solution_dict.values())
