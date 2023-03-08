@@ -224,6 +224,7 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity):  # profits weigh
     n = len(weights)
 
     solution_dict = {}
+
     m = gp.Model()
 
     # add decision variables
@@ -236,11 +237,12 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity):  # profits weigh
     m.addConstr((gp.quicksum(weights[i] * x[i] for i in range(n)) <= capacity), name="Capacity")
 
     # Add Lazy Constraints
+    m.setParam(GRB.Param.LogToConsole, 0)
     m.setParam('TimeLimit', 5 * 60)
     m.update()
 
     # quiet gurobi
-    m.setParam(GRB.Param.LogToConsole, 0)
+
     k = 0  # index of the current solution
     m.optimize()  # solve the model
     solution_new = solution_old = m.ObjVal
