@@ -219,8 +219,9 @@ def solve_knapsack(profits, weights, capacity):
 #
 # main()
 
-def solve_knapsack_gurobi_multiple(profits, weights, capacity):  # profits weights, capacity
-
+def solve_knapsack_gurobi_multiple(profits, weights, capacity, timeOut=5*60, maxSoution=3):  # profits weights, capacity
+# timeOut default 5 minutes / per solution
+# maxSolution = 3 means we can have 1, 2, 3 or more solutions
     n = len(weights)
 
     solution_dict = {}
@@ -238,7 +239,7 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity):  # profits weigh
 
     # Add Lazy Constraints
     m.setParam(GRB.Param.LogToConsole, 0)
-    m.setParam('TimeLimit', 5 * 60)
+    m.setParam('TimeLimit', timeOut)
     m.update()
 
     # quiet gurobi
@@ -247,7 +248,7 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity):  # profits weigh
     m.optimize()  # solve the model
     solution_new = solution_old = m.ObjVal
 
-    while (m.Status == GRB.OPTIMAL) and (solution_old == solution_new):
+    while (m.Status == GRB.OPTIMAL) and (solution_old == solution_new) and (k<maxSoution):
         k += 1
         # Found new feasible optimal solution
         # m.write("{}.sol".format(k))
