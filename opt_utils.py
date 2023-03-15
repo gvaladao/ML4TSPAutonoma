@@ -239,7 +239,7 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity, timeOut=5*60, max
 
     # Add Lazy Constraints
     m.setParam(GRB.Param.LogToConsole, 0)
-    m.setParam('TimeLimit', timeOut)
+    m.setParam('TimeLimit', timeOut )
     m.update()
 
     # quiet gurobi
