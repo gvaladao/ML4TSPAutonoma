@@ -1,11 +1,18 @@
 ##For all files in a path
 ## Read problem, i
-## check solution with gurobi (check for multiple solutions and if any flag!)
-#: normalize, check again with the un-normalized solutions; if any flag!
-# possible error of order 2^-53. can br compensated using fractions.
-# compute distances  dp(i,j), between problem i and problem j, j one of the other problems
-# same for ds(i,j) distances between solutions; for more solutions we take the minimum
+#? normalize, check again with the un-normalized solutions; if any difference flag!
+#? possible error of order 2^-53. can br compensated using fractions.
+#!!!!Important!!!
+## Sort items by density and if equals by weigth (prices should be proportionals)
+
+# Check if the solution of Pisinger is among ours !
+# take Guroby first solution with a timeout of 300 sec.
+# compare with Gurobi multiple solutions (with a limit of 10 sec; just note the problems with differences)
+#: compute distances  dp(i,j), between problem i and problem j, j one of the other problems
+# same for ds(i,j) distances between solutions; for more solutions we take the average
 # same for number of solutions.
+
+
 import csv
 from datetime import datetime
 from os import listdir
@@ -47,19 +54,26 @@ for f in find_csv_filenames(path):
         if line == "-----":
             line_no = -1
             line = file.readline()
+            problem["sorted_items"]=sorted(problem["items"], key=lambda x: (x['p']/x['w'],x['w']))
             problems.append(problem)
-            start_date = datetime.now()
-            v_l=list(problem["items"][i]["p"] for i in range(len(problem["items"])) )
-            w_l=list(problem["items"][i]["p"] for i in range(len(problem["items"])) )
+
+
+            v_l=list(problem["sorted_items"][i]["p"] for i in range(int(problem["n"]) ))
+            w_l=list(problem["sorted_items"][i]["w"] for i in range(int(problem["n"])))
+            sol_l=list(problem["sorted_items"][i]["x"] for i in range(int(problem["n"])))
+            max_val=problem["z"]
             cap=int(problem["c"])
             #max_v = opt_utils.solve_knapsack(v_l, w_l, cap)
+            start_date = datetime.now()
             max_vG, max_cG, sol_l = opt_utils.solve_knapsack_gurobi_multiple(v_l, w_l, cap)
             end_date = datetime.now()
 
             print("Problem: "+problem["name"]+" "+str((end_date-start_date).total_seconds())+"sec; sol: "+str(len(sol_l)))
-            text_solver = "*"
-            '''if (max_v != max_vG):
-                text_solver = "Sol Error max_v/maxvG: " + str(max_v) + "/" + str(max_vG) + "Gurobi int 9.5.2"
+            if (int(max_val) != int(max_vG)):
+                print("Sol Error max_val/maxvG: " + str(max_val) + "/" + str(max_vG) + " Gurobi int 9.5.2")
+            '''
+            if (max_val != max_vG):
+                print("Sol Error max_val/maxvG: " + str(max_val) + "/" + str(max_vG) + " Gurobi int 9.5.2"
                 #diff_gurobi_solver += 1
             else:
                 text_solver = "Gurobi int 9.5.2"
