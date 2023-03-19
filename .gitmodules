@@ -1,0 +1,3 @@
+[submodule "knapsackProblemInstances"]
+	path = knapsackProblemInstances
+	url = https://github.com/JorikJooken/knapsackProblemInstances
