@@ -54,7 +54,7 @@ for f in find_csv_filenames(path):
         if line == "-----":
             line_no = -1
             line = file.readline()
-            problem["sorted_items"]=sorted(problem["items"], key=lambda x: (x['p']/x['w'],x['w']))
+            problem["sorted_items"]=sorted(problem["items"], key=lambda x: (-x['p']/x['w'],-x['w']))
             problems.append(problem)
 
 
