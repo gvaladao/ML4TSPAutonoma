@@ -1,9 +1,30 @@
-import os
-
 # f=os.listdir("../knapsackProblemInstances/problemInstances/n_400_c_1000000_g_2_f_0.1_eps_0.1_s_100/")
 from datetime import datetime
-
+import statistics
 import opt_utils
+def print_sol(sol_l:list):
+    if len(sol_l) > 1:
+        average_sol = []
+        sol_var = []
+        sol_number = len(sol_l)
+        for j in range(len(sol_l[0])):
+            sum_of_bits = 0
+            bit_variance = 0
+            for i in range(sol_number):
+                if sol_l[i][j] == ord(b'1'):
+                    sum_of_bits += 1
+            average_sol.append(sum_of_bits / sol_number)
+            # now the variance
+            for i in range(sol_number):
+                c = 1 if sol_l[i][j] == ord(b'1') else 0
+                bit_variance += (c - sum_of_bits / sol_number) * (c - sum_of_bits / sol_number)
+            sol_var.append(bit_variance / sol_number)
+        print("Solution average: ", average_sol)
+        print("Solution variance: ", sol_var)
+    else:
+        print("Sol: ",sol_l)
+
+
 name="n_400_c_1000000_g_2_f_0.1_eps_0.1_s_100"
 file = open( "../knapsackProblemInstances/problemInstances/"+name+"/test.in", 'r')
 '''
@@ -31,7 +52,6 @@ The item with id 2 has a profit of 2 and a weight of 8. The item with id 3 has a
 
 '''
 line_no = 0;
-n=0
 c=0
 problem = {"items": []}  # a dictionary with various propertie + items a list of dicts.
 problem["name"]=name
@@ -53,8 +73,12 @@ file.close()
 problem["sorted_items"] = sorted(problem["items"], key=lambda x: (-x['p'] / x['w'], -x['w']))
 #problems.append(problem)
 
-v_l = list(problem["sorted_items"][i]["p"] for i in range(int(problem["n"])))
-w_l = list(problem["sorted_items"][i]["w"] for i in range(int(problem["n"])))
+#v_l = list(problem["sorted_items"][i]["p"] for i in range(int(problem["n"])))
+#w_l = list(problem["sorted_items"][i]["w"] for i in range(int(problem["n"])))
+
+v_l = list(problem["items"][i]["p"] for i in range(int(problem["n"])))
+w_l = list(problem["items"][i]["w"] for i in range(int(problem["n"])))
+
 #sol_l = list(problem["sorted_items"][i]["x"] for i in range(int(problem["n"])))
 file = open( "../knapsackProblemInstances/problemInstances/"+name+"/outp.out", 'r')
 line = file.readline()
@@ -71,3 +95,4 @@ print(
     "Problem: " + problem["name"] + " " + str((end_date - start_date).total_seconds()) + "sec; sol: " + str(len(sol_l)))
 if (int(max_val) != int(max_vG)):
     print("Sol Error max_val/maxvG: " + str(max_val) + "/" + str(max_vG) + " Gurobi int 9.5.2")
+print_sol(sol_l)
