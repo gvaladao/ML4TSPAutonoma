@@ -25,30 +25,22 @@ def print_sol(sol_l:list):
         print("Sol: ",sol_l)
 
 
-name="n_400_c_1000000_g_2_f_0.1_eps_0.1_s_100"
-file = open( "../knapsackProblemInstances/problemInstances/"+name+"/test.in", 'r')
+name="00001"
+file = open( "J10/"+name+".txt", 'r')
 '''
-format first items, then (id, p w) then capacity
-3
-1 3 8
-2 2 8
-3 9 1
-10
-"
-
-This describes a problem instance in which there are 
-n=3 items and the knapsack has a capacity of 
-c=10. The item with 
-id 1 has a profit of 3 and a weight of 8.
-The item with id 2 has a profit of 2 and a weight of 8. The item with id 3 has a profit of 9 and a weight of 1.
-
-400 
-0 600092 600056
-1 600035 600079
+format first no of items, then (id, p w,x), then capacity,sum(p), sum(w)
+400 :n
+id p,w,x
+--------------
+0 64 1 1
+1 60 5 1
 ...
-398 77 38
-399 14 44
-1000000
+399 7936 7942 0
+--------------
+1000000 :c
+1003988 :sum(p)
+999999 :sum(w)
+
 
 '''
 line_no = 0;
@@ -61,16 +53,24 @@ while True:
         break
     line = line.replace("\n", "")
     if line_no==0:
-        problem["n"]=int(line)
-    elif line_no==problem["n"]+1:
-        problem["c"]=int(line)
-    else:
         content = line.split(" ")
-        item = {"id_x": int(content[0]), "p": int(content[1]), "w": int(content[2])}
+        problem["n"]=int(content[0])
+    elif line_no in range(problem["n"]+4,problem["n"]+8):
+        content = line.split(" ")
+        problem[content[1][1:]]=int(content[0])
+    elif line_no in range(3,problem["n"]+3):
+        content = line.split(" ")
+        item = {"id_x": int(content[0]), "p": int(content[1]), "w": int(content[2]),"x": int(content[3])}
         problem["items"].append(item)
+    else:
+        pass # do nothing, just comment lines
     line_no += 1
 file.close()
 problem["sorted_items"] = sorted(problem["items"], key=lambda x: (-x['p'] / x['w'], -x['w']))
+for i in range(len(problem["sorted_items"])):
+    if problem["sorted_items"][i]["p"]!=problem["items"][i]["p"]:
+        print("error item: ",i)
+
 #problems.append(problem)
 
 #v_l = list(problem["sorted_items"][i]["p"] for i in range(int(problem["n"])))
@@ -79,13 +79,13 @@ problem["sorted_items"] = sorted(problem["items"], key=lambda x: (-x['p'] / x['w
 v_l = list(problem["items"][i]["p"] for i in range(int(problem["n"])))
 w_l = list(problem["items"][i]["w"] for i in range(int(problem["n"])))
 
-#sol_l = list(problem["sorted_items"][i]["x"] for i in range(int(problem["n"])))
-file = open( "../knapsackProblemInstances/problemInstances/"+name+"/outp.out", 'r')
-line = file.readline()
-line = line.replace("\n", "")
-problem["z"]=int(line)
-max_val = problem["z"]
-cap = int(problem["c"])
+sol_l = list(problem["sorted_items"][i]["x"] for i in range(int(problem["n"])))
+#file = open( "../knapsackProblemInstances/problemInstances/"+name+"/outp.out", 'r')
+#line = file.readline()
+#line = line.replace("\n", "")
+#problem["z"]=int(line)
+max_val = problem["sum(p)"]
+cap = problem["c"]
 # max_v = opt_utils.solve_knapsack(v_l, w_l, cap)
 start_date = datetime.now()
 max_vG, max_cG, sol_l = opt_utils.solve_knapsack_gurobi_multiple(v_l, w_l, cap, maxSoution=2000)
