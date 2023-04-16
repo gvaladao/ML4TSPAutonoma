@@ -109,4 +109,4 @@ for num_problem in range (1,num_test_problems+1):
         gurobi_equal_solutions +=1
     if (int(max_val) > int(max_vG)):
         gurobi_minus_solutions +=1
-print('Final results. Gurobi less: {0}, Gurobi= {1}, Gurobi better{2} test problems.'.format(gurobi_minus_solutions,gurobi_equal_solutions,gurobi_plus_solutions) )
+print('Final results. Gurobi less: {0}, Gurobi= {1}, Gurobi better {2} test problems.'.format(gurobi_minus_solutions,gurobi_equal_solutions,gurobi_plus_solutions) )
