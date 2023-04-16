@@ -12,6 +12,16 @@
 # same for ds(i,j) distances between solutions; for more solutions we take the average
 # same for number of solutions.
 
+'''
+n The number of items of a problem instance
+c The capacity of the knapsack
+g The number of groups of items of a problem instance
+f The approximate fraction of items in the last group (group g)
+eps A noise parameter
+s An upper bound for profits and weights of items in group g
+b The base of the exponent used for the exponentially decreasing profits and weights
+'''
+
 
 import csv
 from datetime import datetime

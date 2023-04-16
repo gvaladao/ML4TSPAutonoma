@@ -235,17 +235,29 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity, timeOut=5*60, max
     m.setObjective(gp.quicksum(profits[i] * x[i] for i in range(n)), GRB.MAXIMIZE)
 
     # add constraint
-    m.addConstr((gp.quicksum(weights[i] * x[i] for i in range(n)) <= capacity), name="Capacity")
+    constraint = m.addConstr((gp.quicksum(weights[i] * x[i] for i in range(n)) <= capacity), name="Capacity")
 
     # Add Lazy Constraints
-    m.setParam(GRB.Param.LogToConsole, 0)
+    m.setParam(GRB.Param.LogToConsole, 0) # 1 for verbose log
     m.setParam('TimeLimit', timeOut )
+
+
+    # m.setParam('Method', 5)  # set  2 the method to branch-and-price
+    # m.setParam('MIPFocus', 1)  # set to 1 to focus on finding feasible solutions quickly
+
     m.update()
 
     # quiet gurobi
 
     k = 0  # index of the current solution
+    # print(f"{m.getRow(constraint)} {constraint.Sense} {constraint.RHS}")
     m.optimize()  # solve the model
+    m.write("model.json")
+
+    if m.Status != GRB.OPTIMAL :
+        print("Model error", m.Status)
+        m.computeIIS()
+        m.write("model.ilp")
     solution_new = solution_old = m.ObjVal
 
     while (m.Status == GRB.OPTIMAL) and (solution_old == solution_new) and (k<maxSoution):
@@ -253,6 +265,14 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity, timeOut=5*60, max
         # Found new feasible optimal solution
         # m.write("{}.sol".format(k))
         solution_dict[k] = m.getAttr('x')
+        sum_weights = 0
+        col_rez = []
+
+        for i in range(len(weights)):
+            if solution_dict[k][i]==1:
+                sum_weights += weights[i]
+                col_rez.append((weights[i],profits[i]))
+        sort_col_rezelt=sorted(col_rez, key=lambda x: (-x[1]))
         solution_old = solution_new
         # Make the previous solution infeasible
         # cancel_last_solution(k)
@@ -287,3 +307,48 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity, timeOut=5*60, max
     # m.write("knapsack.lp")
 
     return solution_old, max_cap, list(solution_dict.values())
+''' from chatGPT
+def solve_knapsack_with_branch_and_price(profits, weights, capacity):
+    n = len(profits)
+
+    m = gp.Model()
+
+    # add decision variables
+    x = m.addVars(n, vtype=GRB.BINARY, name='x')
+
+    # set objective function
+    m.setObjective(gp.quicksum(profits[i] * x[i] for i in range(n)), GRB.MAXIMIZE)
+
+    # add constraint
+    m.addConstr((gp.quicksum(weights[i] * x[i] for i in range(n)) <= capacity), name="Capacity")
+
+    # set branch-and-price algorithm
+    m.setAttr('ModelSense', GRB.MAXIMIZE)
+    m.setParam('OutputFlag', 0)
+    m.setParam('TimeLimit', timeOut)
+    m.setParam('Method', 2) # set the method to branch-and-price
+
+    # solve the model
+    m.optimize()
+
+    if m.status == GRB.OPTIMAL:
+        # retrieve the solution
+        solution = [int(x[i].X + 0.5) for i in range(n)]
+        obj = m.ObjVal
+    else:
+        # no feasible solution found
+        solution = [0] * n
+        obj = float('-inf')
+
+    return obj, solution
+'''
+
+'''
+and an example of 01KP where gready fails:
+Let us try again a problem like this, capacity 10.
+item 1 weight = 9 and value = 36, that gives a ratio of 4. 
+Now 3 more items 
+weights 5, 3, 2, and values 
+19, 11, 7. 
+greedy fails to find the optimum solution.
+'''
