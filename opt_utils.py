@@ -244,7 +244,7 @@ def solve_knapsack_gurobi_multiple(profits, weights, capacity, timeOut=5*60, max
 
     # m.setParam('Method', 5)  # set  2 the method to branch-and-price
     # m.setParam('MIPFocus', 1)  # set to 1 to focus on finding feasible solutions quickly
-
+    m.setParam('MIPGap', 0.000001)
     m.update()
 
     # quiet gurobi
